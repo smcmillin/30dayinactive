@@ -41,7 +41,7 @@ connect-azuread -Credential $credential
 }
 
 Test-AzureADConnectivity
-Test-ExchangeOnlineConnectivity -Testgroup "APL Families"
+Test-ExchangeOnlineConnectivity -Testgroup "[group]"
 
 
 ## Create an arraylist and add accounts from a csv with a header of "mail." Use this arraylist to exclude testing certain accounts that are known to be over 30days without use but are needed for whatever reason.
