@@ -24,3 +24,8 @@ This script has probably saved me at least hours after adding up all the time I'
 
 I figured I should put this here because I took the time to write it. Sure, reset password scripts are the basic of basics, but this has saved me COUNTLESS clicks. Maybe it will be useful to someone, somewhere.
 
+## SharepointPermissions
+
+### O365 Powershell Script
+
+This one should be functional but I haven't had an opportunity to test it yet. Essentially this takes a Sharepoint list and assigns permissions to individual items from a csv. If you have a lot of items and employees are not allowed to see all of them, it would be a massive pain to manage permissions one at a time in the browser. This lets you automate it. Well, someone has to build the csv.
