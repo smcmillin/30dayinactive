@@ -4,8 +4,29 @@ Write-Host -ForegroundColor Yellow `
 ************************************
 
 "
+## Be sure to use Export-clixml
+function Test-AzureADConnectivity {
 
-Import-Module -Name "C:\Users\Tech\OneDrive - Academy for Precision Learning\Documents\Powershell\Myfunctions.psm1"
+try{
+$connected = Get-AzureADTenantDetail
+}
+
+catch [Microsoft.Open.Azure.AD.CommonLibrary.AadNeedAuthenticationException]
+
+{
+Write-Host -ForegroundColor Red "You're not connected to Azure AD, please enter your credentials"
+
+## Get the credential, connect to Azure AD
+if ($credential -eq $null) 
+{
+$credential = Import-CliXml -Path 'C:\cred.xml'
+}
+
+connect-azuread -Credential $credential
+
+
+}
+}
 
 ## Check to see if already connected to Azure AD
 Test-azureadconnectivity
@@ -25,8 +46,8 @@ $account = Get-AzureADUser -SearchString "$search" | Out-GridView -PassThru
 $confirmation = Read-Host "You have selected $($account.userprincipalname) as the account to reset the password for. Is this correct? [y/n]"
 if ($confirmation -eq "y") {
 
-## Enter password
-$password = New-RandomPassword -Base "APLRocks" -Length 4
+## Enter password. This is probably not best practice. Use [System.Web.Security.Membership]::GeneratePassword instead.
+$password = New-RandomPassword -Base "[base]" -Length 4
 } Else {
 Write-Host -ForegroundColor Yellow "Restart the script and select the desired user."
 break
@@ -41,7 +62,7 @@ Write-Host "Either the email address you entered was not valid or the password y
 break
 }
 
-## Confirm if user wants to send password in email
+## Confirm if user wants to send password in email. If not, print the password to give to the user. Also, send-mailmessage is deprecated so this needs to be updated.
 $answer = Read-Host "Do you want to send this information in an email? [y/n]"
 if ($answer -eq "y"){
 Write-Host "Before I can send the temporary password to the user, I need some information."
@@ -52,7 +73,7 @@ break
 }
 
 ## Get email of sender and recipient
-$sender = "sam.m@aplschool.org"
+$sender = "[your email here]"
 $recipient = Read-Host "Enter the PERSONAL email address of the user"
 
 ## Define the Send-MailMessage parameters
@@ -63,17 +84,17 @@ $mailParams = @{
     Credential                 = $credential
     From                       = $sender
     To                         = $recipient
-    Subject                    = "Your APL account password has been reset - $(Get-Date -Format g)"
-    Body                       = "Your APL password has been reset. Your account information is below:
+    Subject                    = "Your account password has been reset - $(Get-Date -Format g)"
+    Body                       = "Your password has been reset. Your account information is below:
 	
 	Username: $($account.userprincipalname)
 	Password: $password 
 	
 	You will be asked to change your password the next time you log in.
 	
-	Samuel McMillin
-	IT Support Associate
-	sam.m@aplschool.org"
+	[your name]
+	[your title]
+	[your email]"
     DeliveryNotificationOption = 'OnFailure', 'OnSuccess'
 }
 
