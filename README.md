@@ -1,5 +1,7 @@
 # PowershellScripts
 
+Since all of these are fairly short in length, I'm going to keep them in one repo.
+
 30dayinactive
 
 O365 Powershell Script
