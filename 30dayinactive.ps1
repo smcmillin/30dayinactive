@@ -1,27 +1,69 @@
-﻿Import-Module -name 'C:\Users\Tech\OneDrive - Academy for Precision Learning\Documents\Powershell\Myfunctions.psm1' 
+## In order for the two below functions to work you will need to use Export-clixml to generate the encrypted credentials. 
+function Test-ExchangeOnlineConnectivity {
+[CmdletBinding()]
+param(
+[Parameter(Mandatory)]
+[string] $Testgroup
+
+)
+
+$connected = Get-DistributionGroup -Identity "$Testgroup" -ErrorAction SilentlyContinue
+if ($connected -eq $null -and $credential -eq $null) {
+Write-Host -ForegroundColor Yellow "You are not connected to Exchange Online. Please enter your credentials."
+Start-Sleep -Seconds 1
+
+$global:credential = Import-CliXml -Path 'C:\cred.xml'
+Connect-ExchangeOnline -Credential $credential
+}
+}
+
+function Test-AzureADConnectivity {
+
+try{
+$connected = Get-AzureADTenantDetail
+}
+
+catch [Microsoft.Open.Azure.AD.CommonLibrary.AadNeedAuthenticationException]
+
+{
+Write-Host -ForegroundColor Red "You're not connected to Azure AD, please enter your credentials"
+
+## Get the credential, connect to Azure AD
+if ($credential -eq $null) 
+{
+$credential = Import-CliXml -Path 'C:\cred.xml'
+}
+
+connect-azuread -Credential $credential
+
+
+}
+}
+
 Test-AzureADConnectivity
 Test-ExchangeOnlineConnectivity -Testgroup "APL Families"
 
-## SKU for student licenses, needed for filter
-$studentlicense = "e82ae690-a2d5-4d76-8d30-7c6e01e6022e"
-$inactiveexclude = Import-csv -Path "C:\Users\Tech\OneDrive - Academy for Precision Learning\Documents\30dayinactiveexclude.csv"
 
+## Create an arraylist and add accounts from a csv with a header of "mail." Use this arraylist to exclude testing certain accounts that are known to be over 30days without use but are needed for whatever reason.
 $exclusionlist = New-Object -TypeName "System.Collections.ArrayList"
 foreach ($exclusion in $inactiveexclude) {
 $exclusionlist.Add($exclusion.mail)
 }
 
+## Get all users that aren't guests, are not in the exclude list, and are enabled
+$users = Get-AzureADUser -All $true | Where-Object {($_.usertype -ne "Guest") -and ($_.AccountEnabled -eq $true) -and ($exclusionlist -notcontains $_.mail)}
 
-
-## Get all users that aren't guests, that do not have student licenses, and are enabled
-$users = Get-AzureADUser -All $true | Where-Object {($_.usertype -ne "Guest") -and ($_.AssignedLicenses.skuid -ne $studentlicense) -and ($_.AccountEnabled -eq $true) -and ($exclusionlist -notcontains $_.mail)}
-
+## Set up counter for progress bar
 $usercount = $users.Count
 $i = 0
 
+## Create arraylist to add inactive users to for export
 $inactiveuserlist = New-Object -TypeName "System.Collections.ArrayList"
+
+## Establish date to test against
 $monthago = (Get-date).AddDays(-30)
 
+## Loop through user list and use Get-mailbox statistics to test user activity against $monthago. If the account has been inactive longer than $monthago, add to $inactiveuserlist.
 foreach ($user in $users) {
 
 $identity = $user.userprincipalname
@@ -39,4 +81,5 @@ Write-Progress -Activity "Testing user accounts..." -Status "User $i of $($userc
 
 }
 
-$inactiveuserlist | export-csv "C:\Users\Tech\OneDrive - Academy for Precision Learning\Documents\InactiveUserList.csv" -NoTypeInformation
+## Export all that work
+$inactiveuserlist | export-csv "[path]" -NoTypeInformation
